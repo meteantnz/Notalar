@@ -7,7 +7,6 @@ public class Cylindir : MonoBehaviour
     GameManager gameManager;
     public Rigidbody2D cylindirRB;
     public float cylindirSpeed;
-    public float cylindirpause;
     // Start is called before the first frame update
     void Start()
     {
@@ -22,11 +21,6 @@ public class Cylindir : MonoBehaviour
         {
             Destroy(gameObject); // Sahnedeki objeyi yok et
             Debug.Log("Nesne yok edildi");
-        }
-
-        if(gameManager.ispaused==true)
-        {
-            cylindirRB.AddForce(new Vector2(cylindirpause, 0));
         }
     }
 }

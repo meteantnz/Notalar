@@ -4,11 +4,11 @@ using TMPro;
 
 public class GameManager : MonoBehaviour
 {
-    Cylindir Cylindir;
+    public Cylindir Cylindir;
     public GameObject prefab;
     public Transform spawnPoint;
     public float spawnInterval = 3.0f;
-    public bool ispaused;
+    public bool isPaused;
     public int count;
     public TextMeshProUGUI pausedText;
     public string _pauserText;
@@ -17,53 +17,67 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        Cylindir=FindObjectOfType<Cylindir>();
+        Cylindir = FindObjectOfType<Cylindir>();
         _pauserText = "Durdurmak Ýçin \"Boþluk\" Tuþuna Bas.";
         lastPauserText = _pauserText;
         animator = GetComponent<Animator>();
         StartCoroutine(SpawnObjects());
     }
 
-    private void Update()
+    void Update()
     {
         pausedText.text = _pauserText;
 
         // Time.timeScale = 0 olsa bile animasyonun çalýþmasý için Animator'u manuel olarak güncelle
         animator.Update(Time.unscaledDeltaTime);
 
-        // Deðer deðiþikliði olup olmadýðýný kontrol et
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            if (!isPaused)
+            {
+                PauseGame();
+            }
+            else
+            {
+                ResumeGame();
+            }
+        }
+
+        // Deðer deðiþikliði olup olmadýðýný kontrol et ve animasyonu tetikle
         if (_pauserText != lastPauserText)
         {
-            animator.SetTrigger("PlayPausedText");
+            animator.SetTrigger("PlayPausedText"); // Tetikleyiciyi ayarla
             lastPauserText = _pauserText; // Son metni güncelle
-        }
-
-        if (Input.GetKeyDown(KeyCode.Space) && !ispaused)
-        {
-            ispaused = true;
-            animator.SetTrigger(_pauserText);
-            _pauserText = "Baþlatmak Ýçin \"Boþluk\" Tuþuna Bas.";
-
-            Debug.Log(ispaused);
-        }
-        else if (Input.GetKeyDown(KeyCode.Space) && ispaused)
-        {           
-            ispaused = false;
-            _pauserText = "Durdurmak Ýçin \"Boþluk\" Tuþuna Bas.";
         }
     }
 
     IEnumerator SpawnObjects()
     {
-        if (ispaused == false)
+        while (true)
         {
-            while (true)
+            if (!isPaused) // Sadece oyun duraklatýlmadýðýnda spawn iþlemini yap
             {
                 GameObject newObject = Instantiate(prefab, spawnPoint.position, spawnPoint.rotation);
                 AssignRandomColor(newObject);
-                yield return new WaitForSeconds(spawnInterval);
             }
+            yield return new WaitForSeconds(spawnInterval);
         }
+    }
+
+    void PauseGame()
+    {
+        isPaused = true;
+        _pauserText = "Baþlatmak Ýçin \"Boþluk\" Tuþuna Bas.";
+        Time.timeScale = 0f; // Oyun durduruluyor
+        Debug.Log("Oyun Duraklatýldý");
+    }
+
+    void ResumeGame()
+    {
+        isPaused = false;
+        _pauserText = "Durdurmak Ýçin \"Boþluk\" Tuþuna Bas.";
+        Time.timeScale = 1f; // Oyun tekrar baþlatýlýyor
+        Debug.Log("Oyun Devam Ediyor");
     }
 
     void AssignRandomColor(GameObject obj)

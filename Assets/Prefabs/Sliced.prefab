@@ -120,5 +120,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cylindirRB: {fileID: 7145882240426044566}
-  cylindirSpeed: 10
-  cylindirpause: 0
+  cylindirSpeed: 150
