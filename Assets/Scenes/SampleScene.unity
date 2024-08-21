@@ -266,7 +266,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: selamlar
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
@@ -355,7 +355,7 @@ Animator:
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: ed994e7224b3ba848abe0732b4c4c5f9, type: 2}
   m_CullingMode: 0
-  m_UpdateMode: 0
+  m_UpdateMode: 2
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
@@ -655,19 +655,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cylindirsPrefabs:
+  - {fileID: 7023024486603146131, guid: d399e140d594ac6409c6cf5a95a1ba7d, type: 3}
   - {fileID: 2561072364702535539, guid: 72ef3efe8e9762a4a991b92a0d156772, type: 3}
   spawnPoint: {fileID: 644407295}
-  spawnInterval: 1.7
+  minSpawnsBeforeFirstObject: 3
+  maxSpawnsBeforeFirstObject: 6
   isPaused: 0
-  pausedText: {fileID: 276792672}
-  sizeVariation: 0.3
-  rearPivotDistance: 0
-  rearPivotDistanceNegative: 0
-  frontPivotDistance: 0
-  pivotDistance: 2
-  pivotDistance2: 6
   minX: 0.1
   maxX: 1
+  distanceToSpawnPoint: 0
+  currentX: 0
+  pausedText: {fileID: 276792672}
+  melodyText: {fileID: 276792672}
 --- !u!4 &823927922
 Transform:
   m_ObjectHideFlags: 0
@@ -695,7 +694,7 @@ Animator:
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: ed994e7224b3ba848abe0732b4c4c5f9, type: 2}
   m_CullingMode: 0
-  m_UpdateMode: 0
+  m_UpdateMode: 2
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0

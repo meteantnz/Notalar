@@ -4,108 +4,160 @@ using TMPro;
 
 public class GameManager : MonoBehaviour
 {
+    [Header("Prefab Ayarlarý")]
     public GameObject[] cylindirsPrefabs;
     public Transform spawnPoint;
-    public float spawnInterval = 3.0f;
+    public int minSpawnsBeforeFirstObject = 3;
+    public int maxSpawnsBeforeFirstObject = 6;
+
+    [Header("Oynanýþ Ayarlarý")]
     public bool isPaused;
-    public TextMeshProUGUI pausedText;
-    public float sizeVariation = 0.5f; // Boyut varyasyonu oraný
-    private Animator animator;
-    private string lastPauserText;
-    public float rearPivotDistance;
-    public float rearPivotDistanceNegative;
-    public float frontPivotDistance;
-    public float pivotDistance;
-    public float pivotDistance2;
     public float minX;
     public float maxX;
-    private GameObject newObject;
-    private GameObject randomPrefab;
+    public float distanceToSpawnPoint;
+    public float currentX;
 
-    private float previousRearPivotX; // Önceki X konumu
+    [Header("UI Elementleri")]
+    public TextMeshProUGUI pausedText;
+    public TextMeshProUGUI melodyText;
+
+    private Animator animator;
+    private string lastPausedText;
+    private int melodyCount;
+    private string melodyCountText;
+
+    private float previousRearPivotX;
+    private int spawnCountSinceLastFirstObject = 0;
+    private int randomSpawnInterval;
+    private GameObject newObject;
+    private Transform childTransform;
 
     void Start()
     {
-        SpawnObjects();
-        lastPauserText = "Durdurmak Ýçin \"Boþluk\" Tuþuna Bas.";
         animator = GetComponent<Animator>();
-        if (newObject != null)
-        {
-            Transform childTransform = newObject.transform.Find("Rear Pivot");
-            if (childTransform != null)
-            {
-                previousRearPivotX = childTransform.position.x; // Ýlk X konumunu kaydet
-            }
-        }
+        randomSpawnInterval = Random.Range(minSpawnsBeforeFirstObject, maxSpawnsBeforeFirstObject);
+        SpawnObjects();
     }
 
     void Update()
     {
-        pausedText.text = lastPauserText;
+        UpdateUI();
+        HandleInput();
+        HandleObjectSpawning();
+        UpdateAnimator();
+    }
 
-        if (newObject != null)
-        {
-            // Çocuða eriþim (çocuðun adý "Rear Pivot" olarak varsayýlmýþtýr)
-            Transform childTransform = newObject.transform.Find("Rear Pivot");
+    void UpdateUI()
+    {
+        melodyText.text = melodyCountText;
+        pausedText.text = lastPausedText;
+    }
 
-            if (childTransform != null)
-            {
-                // Çocuðun pozisyonunu al
-                Vector3 childPosition = childTransform.position;
-                // Mesafeyi hesapla
-                rearPivotDistance = Vector3.Distance(spawnPoint.position, childPosition);
-
-                // Mesafeyi güncelle
-                float currentRearPivotX = childPosition.x;
-                rearPivotDistanceNegative = currentRearPivotX - previousRearPivotX; // X eksenindeki deðiþimi hesapla
-                previousRearPivotX = currentRearPivotX; // Önceki X konumunu güncelle
-
-                // Çocuðun pozisyonundan mesafe hesapla
-                frontPivotDistance = Vector3.Distance(spawnPoint.position, newObject.transform.position);
-            }
-            else
-            {
-                Debug.LogWarning("Çocuk objesi bulunamadý.");
-            }
-        }
-
-        if (rearPivotDistance >= pivotDistance && frontPivotDistance >= pivotDistance2)
-        {
-            SpawnObjects();
-        }
-
-        // Time.timeScale = 0 olsa bile animasyonun çalýþmasý için Animator'u manuel olarak güncelle
-        animator.Update(Time.unscaledDeltaTime);
-
+    void HandleInput()
+    {
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            if (!isPaused)
-            {
-                PauseGame();
-            }
-            else
-            {
+            if (isPaused)
                 ResumeGame();
+            else
+                PauseGame();
+        }
+    }
+
+    void HandleObjectSpawning()
+    {
+        if (!isPaused)
+        {
+            if (spawnPoint != null && childTransform != null)
+            {
+                currentX = childTransform.position.x;
+                distanceToSpawnPoint = Vector3.Distance(spawnPoint.position, childTransform.position);
+
+                if (spawnPoint.position.x <= currentX && distanceToSpawnPoint >= minX)
+                {
+                    SpawnObjects();
+                }
             }
         }
+    }
 
-        // Deðer deðiþikliði olup olmadýðýný kontrol et ve animasyonu tetikle
-        if (pausedText.text != lastPauserText)
+    void UpdateAnimator()
+    {
+        animator.Update(Time.unscaledDeltaTime);
+
+        if (pausedText.text != lastPausedText)
         {
-            animator.SetTrigger("PlayPausedText"); // Tetikleyiciyi ayarla
-            lastPauserText = pausedText.text; // Son metni güncelle
+            animator.SetTrigger("PlayPausedText");
+            lastPausedText = pausedText.text;
         }
     }
 
     void SpawnObjects()
     {
-        if (!isPaused) // Sadece oyun duraklatýlmadýðýnda spawn iþlemini yap
+        if (!isPaused)
         {
-            randomPrefab = cylindirsPrefabs[Random.Range(0, cylindirsPrefabs.Length)];
-            newObject = Instantiate(randomPrefab, spawnPoint.position, spawnPoint.rotation);
+            int prefabIndex = GetPrefabIndex();
+            newObject = Instantiate(cylindirsPrefabs[prefabIndex], spawnPoint.position, spawnPoint.rotation);
+
             AssignRandomColor(newObject);
-            ScaleObject(newObject);
-            // Çocuða eriþim ve mesafe hesaplama
+
+            if (prefabIndex == 1)
+            {
+                ScaleObject(newObject);
+            }
+
+            SetRearPivotTransform();
+
+            if (prefabIndex == 0)
+            {
+                UpdateMelodyCount();
+            }
+        }
+    }
+
+    int GetPrefabIndex()
+    {
+        if (spawnCountSinceLastFirstObject >= randomSpawnInterval)
+        {
+            spawnCountSinceLastFirstObject = 0;
+            randomSpawnInterval = Random.Range(minSpawnsBeforeFirstObject, maxSpawnsBeforeFirstObject);
+            return 0;
+        }
+        else
+        {
+            spawnCountSinceLastFirstObject++;
+            return Random.Range(1, cylindirsPrefabs.Length);
+        }
+    }
+
+    void SetRearPivotTransform()
+    {
+        if (newObject != null)
+        {
+            childTransform = newObject.transform.Find("Rear Pivot");
+            if (childTransform != null)
+            {
+                previousRearPivotX = childTransform.position.x;
+            }
+            else
+            {
+                Debug.LogWarning("Son oluþturulan objenin 'Rear Pivot' nesnesi bulunamadý.");
+            }
+        }
+    }
+
+    void UpdateMelodyCount()
+    {
+        melodyCount++;
+        TextMeshProUGUI textMeshPro = newObject.GetComponentInChildren<TextMeshProUGUI>();
+        if (textMeshPro != null)
+        {
+            melodyCountText = melodyCount.ToString();
+            textMeshPro.text = $"{melodyCountText}. Melodi";
+        }
+        else
+        {
+            Debug.LogWarning("Son oluþturulan ilk objede TextMeshProUGUI bileþeni bulunamadý.");
         }
     }
 
@@ -113,7 +165,7 @@ public class GameManager : MonoBehaviour
     {
         isPaused = true;
         pausedText.text = "Baþlatmak Ýçin \"Boþluk\" Tuþuna Bas.";
-        Time.timeScale = 0f; // Oyun durduruluyor
+        Time.timeScale = 0f;
         Debug.Log("Oyun Duraklatýldý");
     }
 
@@ -121,30 +173,28 @@ public class GameManager : MonoBehaviour
     {
         isPaused = false;
         pausedText.text = "Durdurmak Ýçin \"Boþluk\" Tuþuna Bas.";
-        Time.timeScale = 1f; // Oyun tekrar baþlatýlýyor
+        Time.timeScale = 1f;
         Debug.Log("Oyun Devam Ediyor");
     }
 
     void AssignRandomColor(GameObject obj)
     {
-        Renderer objRenderer = obj.GetComponent<Renderer>();
-        if (objRenderer != null)
+        Transform slicedTransform = obj.transform.Find("Sliced");
+        if (slicedTransform != null)
         {
-            // Önceki rengin zýt veya zýtta yakýn bir rengini seç
-            Color currentColor = objRenderer.material.color;
-            Color randomColor = RandomColor(currentColor);
-            objRenderer.material.color = randomColor;
-        }
-        else
-        {
-            Debug.LogWarning("Object does not have a Renderer component.");
+            Renderer objRenderer = slicedTransform.GetComponent<Renderer>();
+            if (objRenderer != null)
+            {
+                Color currentColor = objRenderer.material.color;
+                Color randomColor = RandomColor(currentColor);
+                objRenderer.material.color = randomColor;
+            }
         }
     }
 
     Color RandomColor(Color previousColor)
     {
-        float h, s, v;
-        Color.RGBToHSV(previousColor, out h, out s, out v);
+        Color.RGBToHSV(previousColor, out float h, out float s, out float v);
         float randomH = (h + Random.Range(0.5f, 1.0f)) % 1.0f;
         float randomS = Random.Range(0.5f, 1.0f);
         float randomV = Random.Range(0.5f, 1.0f);
@@ -153,9 +203,7 @@ public class GameManager : MonoBehaviour
 
     void ScaleObject(GameObject obj)
     {
-        // Rastgele bir x ekseni ölçek oraný belirle (minX ile maxX arasýnda)
         float scaleMultiplierX = Random.Range(minX, maxX);
-        // Diðer eksenlerdeki ölçekleri deðiþtirmeden yalnýzca x eksenini ölçeklendir
         obj.transform.localScale = new Vector3(scaleMultiplierX, obj.transform.localScale.y, obj.transform.localScale.z);
     }
 }
