@@ -12,6 +12,7 @@ public class GameManager : MonoBehaviour
 
     [Header("Oynanýþ Ayarlarý")]
     public bool isPaused;
+    public bool pressedO;
     public float minX;
     public float maxX;
     public float distanceToSpawnPoint;
@@ -20,11 +21,14 @@ public class GameManager : MonoBehaviour
     [Header("UI Elementleri")]
     public TextMeshProUGUI pausedText;
     public TextMeshProUGUI melodyText;
+    public TextMeshProUGUI startTMP;
+    public GameObject startTextObject;
 
     private Animator animator;
     private string lastPausedText;
     private int melodyCount;
     private string melodyCountText;
+    private string startText="Melodi Oluþturmak Ýçin \"O\" Tuþuna Bas!";
 
     private float previousRearPivotX;
     private int spawnCountSinceLastFirstObject = 0;
@@ -36,11 +40,18 @@ public class GameManager : MonoBehaviour
     {
         animator = GetComponent<Animator>();
         randomSpawnInterval = Random.Range(minSpawnsBeforeFirstObject, maxSpawnsBeforeFirstObject);
-        SpawnObjects();
     }
 
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.O)&& !pressedO)
+        {
+            MelodyManager.instance.GenerateMelody(); // Melodi üret
+            SpawnObjects();
+            pressedO = true;
+            startTextObject.SetActive(false);
+            
+        }
         UpdateUI();
         HandleInput();
         HandleObjectSpawning();
@@ -51,6 +62,7 @@ public class GameManager : MonoBehaviour
     {
         melodyText.text = melodyCountText;
         pausedText.text = lastPausedText;
+        startTMP.text = startText;
     }
 
     void HandleInput()
